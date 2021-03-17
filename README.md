@@ -13,7 +13,7 @@ install.packages("devtools")
 library(devtools)
 install.packages("TruncatedDistributions", repos="http://R-Forge.R-project.org")
 BiocManager::install("splatter")
-install_github("FeiQin92/SCRIP")
+install_github("thecailab/SCRIP")
 ```
 
 ## Running SCRIP
