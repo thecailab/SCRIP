@@ -68,7 +68,7 @@ SCRIPsimu=function(data,
     method <- "single"
   }
 
-  if (!(mode %in% c("GP-commonBCV","GP-trendedBCV","BP-commonBCV","BP-trendedBCV","BP","BP-burstBCV"))){
+  if (!(mode %in% c("GP-commonBCV","GP-trendedBCV","BP-commonBCV","BP-trendedBCV","BP","BGP-commonBCV","BGP-trendedBCV"))){
     stop("simulating mode was not typed correctly")
   }
 
@@ -464,10 +464,6 @@ splatSimGroupDE <- function(sim, params) {
 
 
 
-
-
-
-
 #' Simulate BCV means
 #'
 #' Simulate means for each gene in each cell that are adjusted to follow a
@@ -521,32 +517,23 @@ SCRIPsimBCVMeans <- function(data, sim, params){
   formula <- mgcv::gam(response~s(predictor),data=data_gam)
   x_cpm <- edgeR::cpm(x,log=TRUE,prior.counts=1)
 
-  if (mode=="BP-trendedBCV") {
 
-    bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
-
-    for (c in 1:ncol(x_cpm)) {
-      newData <- as.data.frame(x_cpm[,c])
-      colnames(newData) <- "predictor"
-      bcv[,c] <- predict(formula,newData)
-    }
+  if (mode=="GP-commonBCV"){
 
     if (is.finite(bcv.df)) {
-        bcv <- bcv*sqrt(bcv.df / rchisq(nGenes, df = bcv.df))*bcv.shrink
+      bcv <- (bcv.common + (1 / sqrt(x))) * sqrt(bcv.df / rchisq(nGenes, df = bcv.df)) * bcv.shrink
     } else {
-        warning("'bcv.df' is infinite. This parameter will be ignored.")
-        bcv <- bcv*1*bcv.shrink
+      warning("'bcv.df' is infinite. This parameter will be ignored.")
+      bcv <- (bcv.common + (1 / sqrt(x))) * bcv.shrink
     }
 
-
-    # adding bursting effect
-    koni = TruncatedDistributions::rtgamma(nGenes,0.2,scale=0.2,a=0.001,b=0.2)
-    koffi = (koni^2+koni)*bcv^2/(1-koni*bcv^2)
-    koffi[which(koffi <= 0)] <- max(koffi)
-
-    means.cell=x*(koni+koffi)/koni*matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
+    means.cell <- matrix(rgamma(
+      as.numeric(nGenes) * as.numeric(nCells),
+      shape = 1 / (bcv ^ 2), scale = x * (bcv ^ 2)),
+      nrow = nGenes, ncol = nCells)
 
   }
+
 
   if (mode=="GP-trendedBCV") {
 
@@ -590,7 +577,36 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     means.cell=x*(koni+koffi)/koni*matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
   }
 
-  if (mode=="GP-commonBCV"){
+
+  if (mode=="BP-trendedBCV") {
+
+    bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
+
+    for (c in 1:ncol(x_cpm)) {
+      newData <- as.data.frame(x_cpm[,c])
+      colnames(newData) <- "predictor"
+      bcv[,c] <- predict(formula,newData)
+    }
+
+    if (is.finite(bcv.df)) {
+        bcv <- bcv*sqrt(bcv.df / rchisq(nGenes, df = bcv.df))*bcv.shrink
+    } else {
+        warning("'bcv.df' is infinite. This parameter will be ignored.")
+        bcv <- bcv*1*bcv.shrink
+    }
+
+
+    # adding bursting effect
+    koni = TruncatedDistributions::rtgamma(nGenes,0.2,scale=0.2,a=0.001,b=0.2)
+    koffi = (koni^2+koni)*bcv^2/(1-koni*bcv^2)
+    koffi[which(koffi <= 0)] <- max(koffi)
+
+    means.cell=x*(koni+koffi)/koni*matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
+
+  }
+
+
+  if (mode=="BGP-commonBCV") {
 
     if (is.finite(bcv.df)) {
       bcv <- (bcv.common + (1 / sqrt(x))) * sqrt(bcv.df / rchisq(nGenes, df = bcv.df)) * bcv.shrink
@@ -599,23 +615,31 @@ SCRIPsimBCVMeans <- function(data, sim, params){
       bcv <- (bcv.common + (1 / sqrt(x))) * bcv.shrink
     }
 
-    means.cell <- matrix(rgamma(
-      as.numeric(nGenes) * as.numeric(nCells),
-      shape = 1 / (bcv ^ 2), scale = x * (bcv ^ 2)),
-      nrow = nGenes, ncol = nCells)
+    #kon ,koff , s inputs
+    alpha=rgamma(nGenes,shape=10,rate=10)
+    beta=rgamma(nGenes,shape=10,rate=10)
+
+    p=matrix(data=NA,nrow = nGenes,ncol = nCells)
+    for(i in 1:nGenes){
+      p[i,]=rbeta(nCells,alpha[i],beta[i])
+    }
+
+    s=rgamma(nGenes,shape=100,rate=3)
+
+    lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
+    for(n in 1:nGenes){
+      for(k in 1:nCells){
+        lambda[n,k]=s[n]*lib.sizes[k]
+      }
+    }
+
+    means.cell <- matrix(rgamma(nGenes*nCells, shape = 1 / (bcv ^ 2), scale = lambda * (bcv ^ 2)),
+                         nrow = nGenes, ncol = nCells)*p
 
   }
 
-  if (mode=="BP") {
 
-    koni =bursting[,1]
-    koffi = bursting[,2]
-    pij=matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
-    means.cell <- x*(koni+koffi)/koni*pij
-
-  }
-
-  if (mode=="BP-burstBCV") {
+  if (mode=="BGP-trendedBCV") {
 
     bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
 
@@ -651,10 +675,21 @@ SCRIPsimBCVMeans <- function(data, sim, params){
       }
     }
 
-    means.cell <- matrix(rgamma(nGenes*nCells,shape = 1 / (bcv ^ 2), scale = lambda * (bcv ^ 2)),
+    means.cell <- matrix(rgamma(nGenes*nCells, shape = 1 / (bcv ^ 2), scale = lambda * (bcv ^ 2)),
                         nrow = nGenes, ncol = nCells)*p
 
   }
+
+
+  if (mode=="BP") {
+
+    koni =bursting[,1]
+    koffi = bursting[,2]
+    pij=matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
+    means.cell <- x*(koni+koffi)/koni*pij
+
+  }
+
 
   colnames(means.cell) <- cell.names
   rownames(means.cell) <- gene.names
