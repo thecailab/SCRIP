@@ -595,7 +595,6 @@ SCRIPsimBCVMeans <- function(data, sim, params){
         bcv <- bcv*1*bcv.shrink
     }
 
-
     # adding bursting effect
     koni = TruncatedDistributions::rtgamma(nGenes,0.2,scale=0.2,a=0.001,b=0.2)
     koffi = (koni^2+koni)*bcv^2/(1-koni*bcv^2)
@@ -605,8 +604,9 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
   }
 
-
   if (mode=="BGP-commonBCV") {
+
+    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
 
     if (is.finite(bcv.df)) {
       bcv <- (bcv.common + (1 / sqrt(x))) * sqrt(bcv.df / rchisq(nGenes, df = bcv.df)) * bcv.shrink
@@ -629,7 +629,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(n in 1:nGenes){
       for(k in 1:nCells){
-        lambda[n,k]=s[n]*lib.sizes[k]
+        lambda[n,k]=s[n]*norm.lib.sizes[k]
       }
     }
 
@@ -640,6 +640,8 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
 
   if (mode=="BGP-trendedBCV") {
+
+    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
 
     bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
 
@@ -671,7 +673,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(n in 1:nGenes){
       for(k in 1:nCells){
-        lambda[n,k]=s[n]*lib.sizes[k]
+        lambda[n,k]=s[n]*norm.lib.sizes[k]
       }
     }
 
