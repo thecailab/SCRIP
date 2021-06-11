@@ -624,7 +624,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
       p[i,]=rbeta(nCells,alpha[i],beta[i])
     }
 
-    s=rgamma(nGenes,shape=100,rate=3)
+    s=rgamma(nGenes,shape=100,rate=20)
 
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(n in 1:nGenes){
@@ -668,7 +668,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
       p[i,]=rbeta(nCells,alpha[i],beta[i])
     }
 
-    s=rgamma(nGenes,shape=100,rate=3)
+    s=rgamma(nGenes,shape=100,rate=20)
 
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(n in 1:nGenes){
