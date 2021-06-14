@@ -577,7 +577,6 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     means.cell=x*(koni+koffi)/koni*matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
   }
 
-
   if (mode=="BP-trendedBCV") {
 
     bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
@@ -606,15 +605,25 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
   if (mode=="BGP-commonBCV") {
 
+    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+
     best_matches_UMI <- BestMatchParams(tech='UMI',counts=counts)
-    res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population", Sigma=best_matches_UMI$Sigma[1], randseed=0)
+    res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population",
+                              gene_effects_sd=best_matches_UMI$gene_effects_sd[1], Sigma=best_matches_UMI$Sigma[1],
+                              scale_s=best_matches_UMI$scale_s[1], gene_effect_prob=best_matches_UMI$gene_effect_prob[1],
+                              randseed=0)
     kon <- res$kinetic_params[[1]]
     koff <- res$kinetic_params[[2]]
     s <- res$kinetic_params[[3]]
-    alpha <- kon
-    beta <- s/koff
 
-    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+    p = matrix(data=NA,nrow = nGenes,ncol = nCells)
+    lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
+    for(i in 1:nGenes){
+      for(j in 1:nCells){
+        p[i,j] <- rbeta(1,kon[i,j],koff[i,j])
+        lambda[i,j]=p[i,j]*s[i,j]*norm.lib.sizes
+      }
+    }
 
     if (is.finite(bcv.df)) {
       bcv <- (bcv.common + (1 / sqrt(x))) * sqrt(bcv.df / rchisq(nGenes, df = bcv.df)) * bcv.shrink
@@ -623,43 +632,32 @@ SCRIPsimBCVMeans <- function(data, sim, params){
       bcv <- (bcv.common + (1 / sqrt(x))) * bcv.shrink
     }
 
-    #kon ,koff , s inputs
-    # alpha=rgamma(nGenes,shape=10,rate=10)
-    # beta=rgamma(nGenes,shape=10,rate=10)
-#
-#     p=matrix(data=NA,nrow = nGenes,ncol = nCells)
-#     for(i in 1:nGenes){
-#       p[i,]=rbeta(nCells,alpha[i],beta[i])
-#     }
-
-    # p=rbeta(1, kon, koff)
-
-    # s=rgamma(nGenes,shape=100,rate=20)
-    p = matrix(data=NA,nrow = nGenes,ncol = nCells)
-    lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
-    for(i in 1:nGenes){
-      for(j in 1:nCells){
-        p[i,j] <- rbeta(1,alpha[i,j],beta[i,j])
-        lambda[i,j]=s[i, j]*norm.lib.sizes[j]
-      }
-    }
-
     means.cell <- matrix(rgamma(nGenes*nCells, shape = 1 / (bcv ^ 2), scale = lambda * (bcv ^ 2)),
-                         nrow = nGenes, ncol = nCells)*p
+                         nrow = nGenes, ncol = nCells)
 
   }
 
 
   if (mode=="BGP-trendedBCV") {
+    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+
     best_matches_UMI <- BestMatchParams(tech='UMI',counts=counts)
-    res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population", Sigma=best_matches_UMI$Sigma[1], randseed=0)
+    res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population",
+                              gene_effects_sd=best_matches_UMI$gene_effects_sd[1], Sigma=best_matches_UMI$Sigma[1],
+                              scale_s=best_matches_UMI$scale_s[1], gene_effect_prob=best_matches_UMI$gene_effect_prob[1],
+                              randseed=0)
     kon <- res$kinetic_params[[1]]
     koff <- res$kinetic_params[[2]]
     s <- res$kinetic_params[[3]]
-    alpha <- kon
-    beta <- s/koff
 
-    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+    p = matrix(data=NA,nrow = nGenes,ncol = nCells)
+    lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
+    for(i in 1:nGenes){
+      for(j in 1:nCells){
+        p[i,j] <- rbeta(1,kon[i,j],koff[i,j])
+        lambda[i,j]=p[i,j]*s[i,j]*norm.lib.sizes
+      }
+    }
 
     bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
     for (c in 1:ncol(x_cpm)) {
@@ -675,34 +673,8 @@ SCRIPsimBCVMeans <- function(data, sim, params){
       bcv <- bcv*1*bcv.shrink
     }
 
-    #kon ,koff , s inputs
-    # alpha=rgamma(nGenes,shape=10,rate=10)
-    # beta=rgamma(nGenes,shape=10,rate=10)
-    #
-    # p=matrix(data=NA,nrow = nGenes,ncol = nCells)
-    # for(i in 1:nGenes){
-    #   p[i,]=rbeta(nCells,alpha[i],beta[i])
-    # }
-    #
-    # s=rgamma(nGenes,shape=100,rate=20)
-    #
-    # lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
-    # for(n in 1:nGenes){
-    #   for(k in 1:nCells){
-    #     lambda[n,k]=s[n]*norm.lib.sizes[k]
-    #   }
-    # }
-    p = matrix(data=NA,nrow = nGenes,ncol = nCells)
-    lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
-    for(i in 1:nGenes){
-      for(j in 1:nCells){
-        p[i,j] <- rbeta(1,alpha[i,j],beta[i,j])
-        lambda[i,j]=s[i, j]*norm.lib.sizes[j]
-      }
-    }
-
     means.cell <- matrix(rgamma(nGenes*nCells, shape = 1 / (bcv ^ 2), scale = lambda * (bcv ^ 2)),
-                        nrow = nGenes, ncol = nCells)*p
+                        nrow = nGenes, ncol = nCells)
   }
 
 
