@@ -611,6 +611,8 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     kon <- res$kinetic_params[[1]]
     koff <- res$kinetic_params[[2]]
     s <- res$kinetic_params[[3]]
+    alpha <- kon
+    beta <- s/koff
 
     norm.lib.sizes <- lib.sizes/mean(lib.sizes)
 
@@ -637,7 +639,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       for(j in 1:nCells){
-        p[i,j] <- rbeta(1,kon[i,j],koff[i,j])
+        p[i,j] <- rbeta(1,alpha[i,j],beta[i,j])
         lambda[i,j]=s[i, j]*norm.lib.sizes[j]
       }
     }
@@ -649,17 +651,22 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
 
   if (mode=="BGP-trendedBCV") {
+    best_matches_UMI <- BestMatchParams(tech='UMI',counts=counts)
+    res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population", Sigma=best_matches_UMI$Sigma[1], randseed=0)
+    kon <- res$kinetic_params[[1]]
+    koff <- res$kinetic_params[[2]]
+    s <- res$kinetic_params[[3]]
+    alpha <- kon
+    beta <- s/koff
 
     norm.lib.sizes <- lib.sizes/mean(lib.sizes)
 
     bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
-
     for (c in 1:ncol(x_cpm)) {
       newData <- as.data.frame(x_cpm[,c])
       colnames(newData) <- "predictor"
       bcv[,c] <- predict(formula,newData)
     }
-
 
     if (is.finite(bcv.df)) {
       bcv <- bcv*sqrt(bcv.df / rchisq(nGenes, df = bcv.df))*bcv.shrink
@@ -689,15 +696,13 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       for(j in 1:nCells){
-        p[i,j] <- rbeta(1,kon[i,j],koff[i,j])
+        p[i,j] <- rbeta(1,alpha[i,j],beta[i,j])
         lambda[i,j]=s[i, j]*norm.lib.sizes[j]
       }
     }
 
-
     means.cell <- matrix(rgamma(nGenes*nCells, shape = 1 / (bcv ^ 2), scale = lambda * (bcv ^ 2)),
                         nrow = nGenes, ncol = nCells)*p
-
   }
 
 
