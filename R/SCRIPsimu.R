@@ -621,7 +621,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     for(i in 1:nGenes){
       for(j in 1:nCells){
         p[i,j] <- rbeta(1,kon[i,j],koff[i,j])
-        lambda[i,j]=p[i,j]*s[i,j]*norm.lib.sizes
+        lambda[i,j]=p[i,j]*s[i,j]*norm.lib.sizes[j]
       }
     }
 
@@ -655,7 +655,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     for(i in 1:nGenes){
       for(j in 1:nCells){
         p[i,j] <- rbeta(1,kon[i,j],koff[i,j])
-        lambda[i,j]=p[i,j]*s[i,j]*norm.lib.sizes
+        lambda[i,j]=p[i,j]*s[i,j]*norm.lib.sizes[j]
       }
     }
 
