@@ -607,7 +607,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
     norm.lib.sizes <- lib.sizes/mean(lib.sizes)
 
-    best_matches_UMI <- BestMatchParams(tech='UMI',counts=counts)
+    best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts)
     res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population",
                               gene_effects_sd=best_matches_UMI$gene_effects_sd[1], Sigma=best_matches_UMI$Sigma[1],
                               scale_s=best_matches_UMI$scale_s[1], gene_effect_prob=best_matches_UMI$gene_effect_prob[1],
@@ -680,10 +680,32 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
   if (mode=="BP") {
 
-    koni =bursting[,1]
-    koffi = bursting[,2]
-    pij=matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
-    means.cell <- x*(koni+koffi)/koni*pij
+    # koni =bursting[,1]
+    # koffi = bursting[,2]
+    # pij=matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
+    # means.cell <- x*(koni+koffi)/koni*pij
+
+    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+
+    best_matches_UMI <- BestMatchParams(tech='UMI',counts=counts)
+    res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population",
+                              gene_effects_sd=best_matches_UMI$gene_effects_sd[1], Sigma=best_matches_UMI$Sigma[1],
+                              scale_s=best_matches_UMI$scale_s[1], gene_effect_prob=best_matches_UMI$gene_effect_prob[1],
+                              randseed=0)
+    kon <- res$kinetic_params[[1]]
+    koff <- res$kinetic_params[[2]]
+    s <- res$kinetic_params[[3]]
+
+    p = matrix(data=NA,nrow = nGenes,ncol = nCells)
+    lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
+    for(i in 1:nGenes){
+      for(j in 1:nCells){
+        p[i,j] <- rbeta(1,kon[i,j],koff[i,j])
+        lambda[i,j]=p[i,j]*s[i,j]*norm.lib.sizes[j]
+      }
+    }
+
+    means.cell = lambda
 
   }
 

@@ -40,7 +40,7 @@ dist2diag <- function(x, y, nbins){
 #' @param alpha_range if one knows the rough range of mRNA capture efficiency, it can be input here.
 #' @return three set of best matching parameters that was used to simulate the best matching dataset to the experimental dataset
 #' @export
-BestMatchParams <- function(tech,counts,n_optimal=3,
+BestMatchParams_new <- function(tech,counts,n_optimal=3,
                             depth_range=c(-Inf, Inf),alpha_range=c(-Inf, Inf),idx_set=NULL){
   #counts <- counts[rowSums(counts>0)>10, ]
   mean_exprs <- quantile(rowMeans(counts+1,na.rm=T),seq(0,1,0.002))
