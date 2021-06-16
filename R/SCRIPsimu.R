@@ -607,7 +607,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
     norm.lib.sizes <- lib.sizes/mean(lib.sizes)
 
-    best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts)
+    best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts,depth_range=c(min(lib.sizes), max(lib.sizes)))
     res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population",
                               gene_effects_sd=best_matches_UMI$gene_effects_sd[1], Sigma=best_matches_UMI$Sigma[1],
                               scale_s=best_matches_UMI$scale_s[1], gene_effect_prob=best_matches_UMI$gene_effect_prob[1],
@@ -641,7 +641,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
   if (mode=="BGP-trendedBCV") {
     norm.lib.sizes <- lib.sizes/mean(lib.sizes)
 
-    best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts)
+    best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts, depth_range=c(min(lib.sizes), max(lib.sizes)))
     res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population",
                               gene_effects_sd=best_matches_UMI$gene_effects_sd[1], Sigma=best_matches_UMI$Sigma[1],
                               scale_s=best_matches_UMI$scale_s[1], gene_effect_prob=best_matches_UMI$gene_effect_prob[1],
@@ -687,7 +687,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
     norm.lib.sizes <- lib.sizes/mean(lib.sizes)
 
-    best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts)
+    best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts,depth_range=c(min(lib.sizes), max(lib.sizes)))
     res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population",
                               gene_effects_sd=best_matches_UMI$gene_effects_sd[1], Sigma=best_matches_UMI$Sigma[1],
                               scale_s=best_matches_UMI$scale_s[1], gene_effect_prob=best_matches_UMI$gene_effect_prob[1],
