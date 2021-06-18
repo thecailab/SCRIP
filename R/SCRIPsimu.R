@@ -603,7 +603,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
   }
 
-  if (mode %in% c("BGP-commonBCV", "BGP-trendedBCV")){
+  if (mode %in% c("BGP-commonBCV", "BGP-trendedBCV", "BP")){
      norm.lib.sizes <- lib.sizes/mean(lib.sizes)
 
      # best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts,depth_range=c(min(lib.sizes), max(lib.sizes)))
