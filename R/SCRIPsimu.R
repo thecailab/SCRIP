@@ -465,7 +465,6 @@ splatSimGroupDE <- function(sim, params) {
 
 
 #' Simulate BCV means
-#'
 #' Simulate means for each gene in each cell that are adjusted to follow a
 #' mean-variance trend using Biological Coefficient of Variation taken from
 #' and inverse gamma distribution.
@@ -476,7 +475,7 @@ splatSimGroupDE <- function(sim, params) {
 #'
 #' @return SingleCellExperiment with simulated BCV means.
 #'
-#' @importFrom SummarizedExperiment rowData colData assays assays<-
+#' @importFrom SummarizedExperiment rowData colData assays
 #' @importFrom stats rchisq rgamma
 SCRIPsimBCVMeans <- function(data, sim, params){
 
@@ -577,6 +576,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     means.cell=x*(koni+koffi)/koni*matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
   }
 
+
   if (mode=="BP-trendedBCV") {
 
     bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
@@ -603,25 +603,44 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
   }
 
+  if (mode %in% c("BGP-commonBCV", "BGP-trendedBCV")){
+     norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+
+     # best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts,depth_range=c(min(lib.sizes), max(lib.sizes)))
+     # res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population",
+     #                          gene_effects_sd=best_matches_UMI$gene_effects_sd[1], Sigma=best_matches_UMI$Sigma[1],
+     #                          scale_s=best_matches_UMI$scale_s[1], gene_effect_prob=best_matches_UMI$gene_effect_prob[1],
+     #                          randseed=0)
+     # kon <- res$kinetic_params[[1]]
+     # koff <- res$kinetic_params[[2]]
+     # s <- res$kinetic_params[[3]]
+
+     ##a1: expression data (row: gene; col: cell)
+
+     kon=koff=s=vector()
+     for(i in 1:nrow(counts)){
+       pb=SCALE::pb.moment(counts[i,],cellsize=rep(1,ncol(counts)))
+       kon[i]=abs(pb[1])
+       koff[i]=abs(pb[2])
+       s[i]=abs(pb[3])
+     }
+
+     kon[is.na(kon)==T] <- 0.01
+     koff[is.na(koff)==T] <- 0.01
+     s[is.na(s)==T] <- 0.01
+
+  }
   if (mode=="BGP-commonBCV") {
 
-    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
-
-    best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts,depth_range=c(min(lib.sizes), max(lib.sizes)))
-    res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population",
-                              gene_effects_sd=best_matches_UMI$gene_effects_sd[1], Sigma=best_matches_UMI$Sigma[1],
-                              scale_s=best_matches_UMI$scale_s[1], gene_effect_prob=best_matches_UMI$gene_effect_prob[1],
-                              randseed=0)
-    kon <- res$kinetic_params[[1]]
-    koff <- res$kinetic_params[[2]]
-    s <- res$kinetic_params[[3]]
-
     p = matrix(data=NA,nrow = nGenes,ncol = nCells)
+    for(i in 1:nGenes){
+      p[i,]=rbeta(nCells,kon[i],koff[i])
+    }
+
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       for(j in 1:nCells){
-        p[i,j] <- rbeta(1,kon[i,j],koff[i,j])
-        lambda[i,j]=p[i,j]*s[i,j]*norm.lib.sizes[j]
+        lambda[i,j]=p[i,j]*s[i]*norm.lib.sizes[j]
       }
     }
 
@@ -639,25 +658,19 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
 
   if (mode=="BGP-trendedBCV") {
-    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
-
-    best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts, depth_range=c(min(lib.sizes), max(lib.sizes)))
-    res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population",
-                              gene_effects_sd=best_matches_UMI$gene_effects_sd[1], Sigma=best_matches_UMI$Sigma[1],
-                              scale_s=best_matches_UMI$scale_s[1], gene_effect_prob=best_matches_UMI$gene_effect_prob[1],
-                              randseed=0)
-    kon <- res$kinetic_params[[1]]
-    koff <- res$kinetic_params[[2]]
-    s <- res$kinetic_params[[3]]
 
     p = matrix(data=NA,nrow = nGenes,ncol = nCells)
+    for(i in 1:nGenes){
+      p[i,]=rbeta(nCells,kon[i],koff[i])
+    }
+
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       for(j in 1:nCells){
-        p[i,j] <- rbeta(1,kon[i,j],koff[i,j])
-        lambda[i,j]=p[i,j]*s[i,j]*norm.lib.sizes[j]
+        lambda[i,j]=p[i,j]*s[i]*norm.lib.sizes[j]
       }
     }
+
 
     bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
     for (c in 1:ncol(x_cpm)) {
@@ -685,30 +698,21 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     # pij=matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
     # means.cell <- x*(koni+koffi)/koni*pij
 
-    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
-
-    best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts,depth_range=c(min(lib.sizes), max(lib.sizes)))
-    res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population",
-                              gene_effects_sd=best_matches_UMI$gene_effects_sd[1], Sigma=best_matches_UMI$Sigma[1],
-                              scale_s=best_matches_UMI$scale_s[1], gene_effect_prob=best_matches_UMI$gene_effect_prob[1],
-                              randseed=0)
-    kon <- res$kinetic_params[[1]]
-    koff <- res$kinetic_params[[2]]
-    s <- res$kinetic_params[[3]]
-
     p = matrix(data=NA,nrow = nGenes,ncol = nCells)
+    for(i in 1:nGenes){
+      p[i,]=rbeta(nCells,kon[i],koff[i])
+    }
+
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       for(j in 1:nCells){
-        p[i,j] <- rbeta(1,kon[i,j],koff[i,j])
-        lambda[i,j]=p[i,j]*s[i,j]*norm.lib.sizes[j]
+        lambda[i,j]=p[i,j]*s[i]*norm.lib.sizes[j]
       }
     }
 
     means.cell = lambda
 
   }
-
 
   colnames(means.cell) <- cell.names
   rownames(means.cell) <- gene.names
