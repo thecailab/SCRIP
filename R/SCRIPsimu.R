@@ -610,7 +610,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
   }
 
   if (mode=="BGP-commonBCV") {
-
+    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
     p = matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       p[i,]=rbeta(nCells,kon[i],koff[i])
@@ -637,7 +637,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
 
   if (mode=="BGP-trendedBCV") {
-
+    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
     p = matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       p[i,]=rbeta(nCells,kon[i],koff[i])
@@ -671,7 +671,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
 
   if (mode=="BP") {
-
+    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
     # koni =bursting[,1]
     # koffi = bursting[,2]
     # pij=matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
