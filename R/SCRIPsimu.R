@@ -15,6 +15,7 @@
 #'@param de.downProb the proportion of down-regulated DE genes
 #'@param de.facLoc DE location factor
 #'@param de.facScale DE scale factor
+#'@param kinetics parameters of Kon Koff and S
 #'@param path.skew Controls how likely cells are from the start or end point of the path
 #'@param batch.facLoc DE location factor in batch
 #'@param batch.facScale DE scale factor in batch
@@ -37,7 +38,6 @@ SCRIPsimu=function(data,
                    bcv.shrink=1,
                    Dropout_rate=NULL,
                    mode="GP-trendedBCV",
-                   bursting=NULL,
                    de.prob=NULL,
                    de.downProb=NULL,
                    de.facLoc=NULL,
@@ -45,6 +45,7 @@ SCRIPsimu=function(data,
                    path.skew=NULL,
                    batch.facLoc=NULL,
                    batch.facScale=NULL,
+                   kinetics=NULL,
                    path.nSteps=NULL, ...){
 
 
@@ -93,6 +94,7 @@ SCRIPsimu=function(data,
   S4Vectors::metadata(sim)$method <-  method
   S4Vectors::metadata(sim)$mode <-  mode
   S4Vectors::metadata(sim)$base_allcellmeans_SC <- base_allcellmeans_SC
+  S4Vectors::metadata(sim)$kinetics <- kinetics
 
   if (is.null(de.prob)==T){
     S4Vectors::metadata(sim)$de.prob <- rep(splatter::getParam(params, "de.prob"), nGroups)
@@ -148,7 +150,6 @@ SCRIPsimu=function(data,
 
   S4Vectors::metadata(sim)$bcv.shrink <-  bcv.shrink
   S4Vectors::metadata(sim)$pre.bcv.df <-  pre.bcv.df
-  S4Vectors::metadata(sim)$bursting <-  bursting
   S4Vectors::metadata(sim)$Dropout_rate <- Dropout_rate
 
   batches <- lapply(seq_len(nBatches), function(i, b) {rep(i, b[i])},
@@ -483,8 +484,13 @@ SCRIPsimBCVMeans <- function(data, sim, params){
   mode  <- S4Vectors::metadata(sim)$mode
   bcv.shrink <- S4Vectors::metadata(sim)$bcv.shrink
   pre.bcv.df <- S4Vectors::metadata(sim)$pre.bcv.df
-  bursting <- S4Vectors::metadata(sim)$bursting
+  kinetics <- S4Vectors::metadata(sim)$kinetics
 
+  if (is.null(kinetics)==FALSE){
+    kon <- kinetics$kon
+    koff <- kinetics$koff
+    s <- kinetics$s
+  }
   nGenes <- splatter::getParam(params, "nGenes")
 
   cell.names <- SummarizedExperiment::colData(sim)$Cell
@@ -603,33 +609,6 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
   }
 
-  if (mode %in% c("BGP-commonBCV", "BGP-trendedBCV", "BP")){
-     norm.lib.sizes <- lib.sizes/mean(lib.sizes)
-
-     # best_matches_UMI <- BestMatchParams_new(tech='UMI',counts=counts,depth_range=c(min(lib.sizes), max(lib.sizes)))
-     # res <- SimulateTrueCounts(ncells_total=nCells, ngenes=nGenes, evf_type="one.population",
-     #                          gene_effects_sd=best_matches_UMI$gene_effects_sd[1], Sigma=best_matches_UMI$Sigma[1],
-     #                          scale_s=best_matches_UMI$scale_s[1], gene_effect_prob=best_matches_UMI$gene_effect_prob[1],
-     #                          randseed=0)
-     # kon <- res$kinetic_params[[1]]
-     # koff <- res$kinetic_params[[2]]
-     # s <- res$kinetic_params[[3]]
-
-     ##a1: expression data (row: gene; col: cell)
-
-     kon=koff=s=vector()
-     for(i in 1:nrow(counts)){
-       pb=SCALE::pb.moment(counts[i,],cellsize=rep(1,ncol(counts)))
-       kon[i]=abs(pb[1])
-       koff[i]=abs(pb[2])
-       s[i]=abs(pb[3])
-     }
-
-     kon[is.na(kon)==T] <- 0.01
-     koff[is.na(koff)==T] <- 0.01
-     s[is.na(s)==T] <- 0.01
-
-  }
   if (mode=="BGP-commonBCV") {
 
     p = matrix(data=NA,nrow = nGenes,ncol = nCells)
