@@ -681,7 +681,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       for(j in 1:nCells){
-        lambda[i,j]=p*s[i]*norm.lib.sizes[j]
+        lambda[i,j]=s[i]*norm.lib.sizes[j]
       }
     }
 
