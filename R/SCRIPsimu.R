@@ -611,6 +611,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
   if (mode=="BGP-commonBCV") {
     norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+
     p = matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       p[i,]=rbeta(nCells,kon[i],koff[i])
@@ -619,7 +620,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       for(j in 1:nCells){
-        lambda[i,j]=p[i,j]*s[i]*norm.lib.sizes[j]
+        lambda[i,j]=s[i]*norm.lib.sizes[j]
       }
     }
 
@@ -631,13 +632,13 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     }
 
     means.cell <- matrix(rgamma(nGenes*nCells, shape = 1 / (bcv ^ 2), scale = lambda * (bcv ^ 2)),
-                         nrow = nGenes, ncol = nCells)
+                         nrow = nGenes, ncol = nCells)*p
 
   }
 
-
   if (mode=="BGP-trendedBCV") {
     norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+
     p = matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       p[i,]=rbeta(nCells,kon[i],koff[i])
@@ -646,10 +647,9 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       for(j in 1:nCells){
-        lambda[i,j]=p[i,j]*s[i]*norm.lib.sizes[j]
+        lambda[i,j]=s[i]*norm.lib.sizes[j]
       }
     }
-
 
     bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
     for (c in 1:ncol(x_cpm)) {
@@ -666,16 +666,12 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     }
 
     means.cell <- matrix(rgamma(nGenes*nCells, shape = 1 / (bcv ^ 2), scale = lambda * (bcv ^ 2)),
-                        nrow = nGenes, ncol = nCells)
+                        nrow = nGenes, ncol = nCells)*p
   }
 
 
   if (mode=="BP") {
     norm.lib.sizes <- lib.sizes/mean(lib.sizes)
-    # koni =bursting[,1]
-    # koffi = bursting[,2]
-    # pij=matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
-    # means.cell <- x*(koni+koffi)/koni*pij
 
     p = matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
@@ -685,11 +681,11 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
     for(i in 1:nGenes){
       for(j in 1:nCells){
-        lambda[i,j]=p[i,j]*s[i]*norm.lib.sizes[j]
+        lambda[i,j]=p*s[i]*norm.lib.sizes[j]
       }
     }
 
-    means.cell = lambda
+    means.cell = lambda*p
 
   }
 
