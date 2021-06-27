@@ -164,7 +164,7 @@ SCRIPsimu=function(data,
   }
 
   sim <- SCRIPsimLibSizes(sim, params, libsize)
-  sim <- SCRIPsimGeneMeans(sim, params)
+  sim <- SCRIPsimGeneMeans(data, sim, params)
 
   if (nBatches > 1) {
     sim <- splatSimBatchEffects(sim, params)
@@ -244,7 +244,7 @@ SCRIPsimLibSizes <- function(sim, params, libsize) {
 #'
 #' @importFrom SummarizedExperiment rowData rowData<-
 #' @importFrom stats rgamma median
-SCRIPsimGeneMeans <- function(sim, params) {
+SCRIPsimGeneMeans <- function(data, sim, params) {
 
   nGenes <- splatter::getParam(params, "nGenes")
   mean.shape <- splatter::getParam(params, "mean.shape")
@@ -253,10 +253,26 @@ SCRIPsimGeneMeans <- function(sim, params) {
   out.facLoc <- splatter::getParam(params, "out.facLoc")
   out.facScale <- splatter::getParam(params, "out.facScale")
   base.means.gene <- S4Vectors::metadata(sim)$base_allcellmeans_SC
+  mode  <- S4Vectors::metadata(sim)$mode
 
   # Simulate base gene means
   if (is.null(base.means.gene)==TRUE){
     base.means.gene <- rgamma(nGenes, shape = mean.shape, rate = mean.rate)
+
+    if mode %in% c("BGP-commonBCV","BGP-trendedBCV","BP"){
+
+      lib.sizes <- colSums(data)
+      lib.med <- median(lib.sizes)
+      norm.counts <- t(t(data) / lib.sizes * lib.med)
+      norm.counts <- norm.counts[rowSums(norm.counts > 0) > 1, ]
+      means <- rowMeans(norm.counts)
+      means[means>1] <- 1
+      means.fit <- fitdistrplus::fitdist(means, "beta", method = "mme")
+
+      p <- rbeta(nGenes, unname(means.fit$estimate["shape1"]),  unname(means.fit$estimate["shape2"]))
+      s <- base.means.gene
+      base.means.gene <- p*s
+    }
   }
 
   # Add expression outliers
@@ -575,11 +591,11 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     }
 
     # adding bursting effect
-    koni = matrix(TruncatedDistributions::rtgamma(nrow(x)*ncol(x),0.2,scale=0.2,a=0.001,b=0.2),nrow=nrow(x),ncol=ncol(x))
+    koni = matrix(TruncatedDistributions::rtgamma(nGenes*nCells,0.2,scale=0.2,a=0.001,b=0.2),nrow=nGenes,ncol=nCells)
     koffi = (koni^2+koni)*bcv^2/(1-koni*bcv^2)
     koffi[which(koffi <= 0)] <- max(koffi)
 
-    means.cell=x*(koni+koffi)/koni*matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
+    means.cell=x*(koni+koffi)/koni*matrix(rbeta(nGenes*nCells,koni,koffi),nrow=nGenes,ncol=nCells)
   }
 
 
@@ -605,25 +621,26 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     koffi = (koni^2+koni)*bcv^2/(1-koni*bcv^2)
     koffi[which(koffi <= 0)] <- max(koffi)
 
-    means.cell=x*(koni+koffi)/koni*matrix(rbeta(nrow(x)*ncol(x),koni,koffi),nrow=nrow(x),ncol=ncol(x))
+    means.cell=x*(koni+koffi)/koni*matrix(rbeta(nGenes*nCells,koni,koffi),nrow=nGenes,ncol=nCells)
 
   }
 
   if (mode=="BGP-commonBCV") {
-    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
-
-    p = matrix(data=NA,nrow = nGenes,ncol = nCells)
-    for(i in 1:nGenes){
-      p[i,]=rbeta(nCells,kon[i],koff[i])
-    }
-
-    lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
-    for(i in 1:nGenes){
-      for(j in 1:nCells){
-        lambda[i,j]=s[i]*norm.lib.sizes[j]
-      }
-    }
-
+    # norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+    # p <- SummarizedExperiment::rowData(sim)$beta.base.rate
+    # s <- base.means.gene
+    # p = matrix(data=NA,nrow = nGenes,ncol = nCells)
+    # for(i in 1:nGenes){
+    #   p[i,]=rbeta(nCells,kon[i],koff[i])
+    # }
+    #
+    # lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
+    # for(i in 1:nGenes){
+    #   for(j in 1:nCells){
+    #     lambda[i,j]=p[i]*s[i]*norm.lib.sizes[j]
+    #   }
+    # }
+    lambda <- x
     if (is.finite(bcv.df)) {
       bcv <- (bcv.common + (1 / sqrt(x))) * sqrt(bcv.df / rchisq(nGenes, df = bcv.df)) * bcv.shrink
     } else {
@@ -631,25 +648,31 @@ SCRIPsimBCVMeans <- function(data, sim, params){
       bcv <- (bcv.common + (1 / sqrt(x))) * bcv.shrink
     }
 
-    means.cell <- matrix(rgamma(nGenes*nCells, shape = 1 / (bcv ^ 2), scale = lambda * (bcv ^ 2)),
-                         nrow = nGenes, ncol = nCells)*p
+    means.cell <- matrix(rgamma(
+      nGenes * nCells,
+      shape = 1 / (bcv ^ 2), scale = lambda * (bcv ^ 2)),
+      nrow = nGenes, ncol = nCells)
 
   }
 
+
   if (mode=="BGP-trendedBCV") {
-    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+    # norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+    # p <- SummarizedExperiment::rowData(sim)$beta.base.rate
+    # s <- base.means.gene
 
-    p = matrix(data=NA,nrow = nGenes,ncol = nCells)
-    for(i in 1:nGenes){
-      p[i,]=rbeta(nCells,kon[i],koff[i])
-    }
+    # p = matrix(data=NA,nrow = nGenes,ncol = nCells)
+    # for(i in 1:nGenes){
+    #   p[i,]=rbeta(nCells,kon[i],koff[i])
+    # }
 
-    lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
-    for(i in 1:nGenes){
-      for(j in 1:nCells){
-        lambda[i,j]=s[i]*norm.lib.sizes[j]
-      }
-    }
+    lambda <- x
+    # lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
+    # for(i in 1:nGenes){
+    #   for(j in 1:nCells){
+    #     lambda[i,j]=p[i]*s[i]*norm.lib.sizes[j]
+    #   }
+    # }
 
     bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
     for (c in 1:ncol(x_cpm)) {
@@ -665,27 +688,32 @@ SCRIPsimBCVMeans <- function(data, sim, params){
       bcv <- bcv*1*bcv.shrink
     }
 
-    means.cell <- matrix(rgamma(nGenes*nCells, shape = 1 / (bcv ^ 2), scale = lambda * (bcv ^ 2)),
-                        nrow = nGenes, ncol = nCells)*p
+    means.cell <- matrix(rgamma(
+      nGenes * nCells,
+      shape = 1 / (bcv ^ 2), scale = lambda * (bcv ^ 2)),
+      nrow = nGenes, ncol = nCells)
+
   }
 
 
   if (mode=="BP") {
-    norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+    # norm.lib.sizes <- lib.sizes/mean(lib.sizes)
+    # p <- SummarizedExperiment::rowData(sim)$beta.base.rate
+    # s <- base.means.gene
 
-    p = matrix(data=NA,nrow = nGenes,ncol = nCells)
-    for(i in 1:nGenes){
-      p[i,]=rbeta(nCells,kon[i],koff[i])
-    }
+    # p = matrix(data=NA,nrow = nGenes,ncol = nCells)
+    # for(i in 1:nGenes){
+    #   p[i,]=rbeta(nCells,kon[i],koff[i])
+    # }
 
-    lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
-    for(i in 1:nGenes){
-      for(j in 1:nCells){
-        lambda[i,j]=s[i]*norm.lib.sizes[j]
-      }
-    }
+    # lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
+    # for(i in 1:nGenes){
+    #   for(j in 1:nCells){
+    #     lambda[i,j]=p[i]*s[i]*norm.lib.sizes[j]
+    #   }
+    # }
 
-    means.cell = lambda*p
+    means.cell = lambda = x
 
   }
 
