@@ -259,7 +259,7 @@ SCRIPsimGeneMeans <- function(data, sim, params) {
   if (is.null(base.means.gene)==TRUE){
     base.means.gene <- rgamma(nGenes, shape = mean.shape, rate = mean.rate)
 
-    if mode %in% c("BGP-commonBCV","BGP-trendedBCV","BP"){
+    if (mode %in% c("BGP-commonBCV","BGP-trendedBCV","BP")){
 
       lib.sizes <- colSums(data)
       lib.med <- median(lib.sizes)
