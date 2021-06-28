@@ -269,7 +269,7 @@ SCRIPsimGeneMeans <- function(data, sim, params) {
       means <- rowMeans(norm.counts)
       means <- means/quantile(means,0.99)
       means[means>1] <- 1
-      means.fit1 <- fitdistrplus::fitdist(means, "beta", method = "mme")
+      means.fit <- fitdistrplus::fitdist(means, "beta", method = "mme")
 
       p <- rbeta(nGenes, unname(means.fit$estimate["shape1"]),  unname(means.fit$estimate["shape2"]))
       s <- base.means.gene
