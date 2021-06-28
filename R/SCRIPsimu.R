@@ -261,13 +261,15 @@ SCRIPsimGeneMeans <- function(data, sim, params) {
 
     if (mode %in% c("BGP-commonBCV","BGP-trendedBCV","BP")){
 
-      lib.sizes <- colSums(data)
+      lib.sizes <- colSums(counts)
       lib.med <- median(lib.sizes)
-      norm.counts <- t(t(data) / lib.sizes * lib.med)
+      norm.counts <- t(t(counts) / lib.sizes * lib.med)
       norm.counts <- norm.counts[rowSums(norm.counts > 0) > 1, ]
+
       means <- rowMeans(norm.counts)
+      means <- means/quantile(means,0.99)
       means[means>1] <- 1
-      means.fit <- fitdistrplus::fitdist(means, "beta", method = "mme")
+      means.fit1 <- fitdistrplus::fitdist(means, "beta", method = "mme")
 
       p <- rbeta(nGenes, unname(means.fit$estimate["shape1"]),  unname(means.fit$estimate["shape2"]))
       s <- base.means.gene
