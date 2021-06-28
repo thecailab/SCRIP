@@ -261,9 +261,9 @@ SCRIPsimGeneMeans <- function(data, sim, params) {
 
     if (mode %in% c("BGP-commonBCV","BGP-trendedBCV","BP")){
 
-      lib.sizes <- colSums(counts)
+      lib.sizes <- colSums(data)
       lib.med <- median(lib.sizes)
-      norm.counts <- t(t(counts) / lib.sizes * lib.med)
+      norm.counts <- t(t(data) / lib.sizes * lib.med)
       norm.counts <- norm.counts[rowSums(norm.counts > 0) > 1, ]
 
       means <- rowMeans(norm.counts)
