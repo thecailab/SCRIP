@@ -12,7 +12,6 @@ Imports:
     S4Vectors,
     SummarizedExperiment,
     SingleCellExperiment,
-    TruncatedDistributions,
     mgcv,
     edgeR,
     SCALE
