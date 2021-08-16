@@ -11,7 +11,6 @@ SCRIP provides a flexible Gamma-Poisson mixture and a Beta-Poisson mixture frame
 ```r
 install.packages("devtools")
 library(devtools)
-install.packages("TruncatedDistributions", repos="http://R-Forge.R-project.org")
 BiocManager::install("splatter")
 install_github("thecailab/SCRIP")
 ```
