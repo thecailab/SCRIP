@@ -628,20 +628,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
   }
 
   if (mode=="BGP-commonBCV") {
-    # norm.lib.sizes <- lib.sizes/mean(lib.sizes)
-    # p <- SummarizedExperiment::rowData(sim)$beta.base.rate
-    # s <- base.means.gene
-    # p = matrix(data=NA,nrow = nGenes,ncol = nCells)
-    # for(i in 1:nGenes){
-    #   p[i,]=rbeta(nCells,kon[i],koff[i])
-    # }
-    #
-    # lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
-    # for(i in 1:nGenes){
-    #   for(j in 1:nCells){
-    #     lambda[i,j]=p[i]*s[i]*norm.lib.sizes[j]
-    #   }
-    # }
+   
     lambda <- x
     if (is.finite(bcv.df)) {
       bcv <- (bcv.common + (1 / sqrt(x))) * sqrt(bcv.df / rchisq(nGenes, df = bcv.df)) * bcv.shrink
@@ -659,23 +646,8 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
 
   if (mode=="BGP-trendedBCV") {
-    # norm.lib.sizes <- lib.sizes/mean(lib.sizes)
-    # p <- SummarizedExperiment::rowData(sim)$beta.base.rate
-    # s <- base.means.gene
-
-    # p = matrix(data=NA,nrow = nGenes,ncol = nCells)
-    # for(i in 1:nGenes){
-    #   p[i,]=rbeta(nCells,kon[i],koff[i])
-    # }
-
+    
     lambda <- x
-    # lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
-    # for(i in 1:nGenes){
-    #   for(j in 1:nCells){
-    #     lambda[i,j]=p[i]*s[i]*norm.lib.sizes[j]
-    #   }
-    # }
-
     bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
     for (c in 1:ncol(x_cpm)) {
       newData <- as.data.frame(x_cpm[,c])
@@ -699,24 +671,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
 
   if (mode=="BP") {
-    # norm.lib.sizes <- lib.sizes/mean(lib.sizes)
-    # p <- SummarizedExperiment::rowData(sim)$beta.base.rate
-    # s <- base.means.gene
-
-    # p = matrix(data=NA,nrow = nGenes,ncol = nCells)
-    # for(i in 1:nGenes){
-    #   p[i,]=rbeta(nCells,kon[i],koff[i])
-    # }
-
-    # lambda=matrix(data=NA,nrow = nGenes,ncol = nCells)
-    # for(i in 1:nGenes){
-    #   for(j in 1:nCells){
-    #     lambda[i,j]=p[i]*s[i]*norm.lib.sizes[j]
-    #   }
-    # }
-
     means.cell = lambda = x
-
   }
 
   colnames(means.cell) <- cell.names
