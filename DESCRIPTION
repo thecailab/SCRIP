@@ -8,8 +8,7 @@ Description: SCRIP provides a comprehensive scheme that is capable of simulating
 License: GPL-3 + file LICENSE
 LazyData: true
 Depends: 
-    R (>= 4.0),
-    SingleCellExperiment
+    R (>= 4.0)
 Imports:
     splatter,
     S4Vectors,
