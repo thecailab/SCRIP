@@ -1,12 +1,19 @@
 Package: SCRIP
 Type: Package
-Title: 
+Title: SCRIP: an accurate simulator for single-cell RNA sequencing data
 Version: 1.2.1
+Date: 2021-08-17
 Author: Fei Qin
 Maintainer: The package maintainer <yourself@somewhere.net>
-Description: SCRIP provides a comprehensive scheme that is capable of simulating scRNA-seq data for various parameters of Biological Coefficient of Variation (BCV), busting kinetics, differential expression (DE), cell or sample groups, cell trajectory, batch effect and other experimental designs. SCRIP proposed and compared two frameworks with Gamma-Poisson and Beta-Poisson models for simulating scRNA-seq data. 
-Encoding: UTF-8
+Description: SCRIP provides a comprehensive scheme that is capable of simulating 
+scRNA-seq data for various parameters of Biological Coefficient of Variation (BCV), 
+busting kinetics, differential expression (DE), cell or sample groups, cell trajectory, 
+batch effect and other experimental designs. SCRIP proposed and compared two frameworks 
+with Gamma-Poisson and Beta-Gamma-Poisson models for simulating scRNA-seq data. 
+License: GPL-3 + file LICENSE
 LazyData: true
+Depends: 
+    R (>= 4.0)
 Imports:
     splatter,
     S4Vectors,
@@ -14,7 +21,10 @@ Imports:
     SingleCellExperiment,
     mgcv,
     edgeR,
-    checkmate,
+    checkmate (>= 2.0.0),
     SCALE
-Depends: 
-    R (>= 4.0)
+URL: https://https://github.com/thecailab/SCRIP
+RoxygenNote: 7.1.1
+Encoding: UTF-8
+VignetteBuilder: knitr
+Language: en-GB
