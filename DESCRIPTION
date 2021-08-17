@@ -1,7 +1,7 @@
 Package: SCRIP
 Type: Package
 Title: 
-Version: 0.1.0
+Version: 1.2.1
 Author: Fei Qin
 Maintainer: The package maintainer <yourself@somewhere.net>
 Description: SCRIP provides a comprehensive scheme that is capable of simulating scRNA-seq data for various parameters of Biological Coefficient of Variation (BCV), busting kinetics, differential expression (DE), cell or sample groups, cell trajectory, batch effect and other experimental designs. SCRIP proposed and compared two frameworks with Gamma-Poisson and Beta-Poisson models for simulating scRNA-seq data. 
@@ -17,4 +17,4 @@ Imports:
     checkmate,
     SCALE
 Depends: 
-    R (>= 3.5.0)
+    R (>= 4.0)
