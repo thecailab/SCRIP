@@ -6,7 +6,7 @@ Date: 2021-08-17
 Author: Fei Qin
 Description: SCRIP provides a comprehensive scheme that is capable of simulating scRNA-seq data for various parameters of Biological Coefficient of Variation (BCV), busting kinetics, differential expression (DE), cell or sample groups, cell trajectory, batch effect and other experimental designs. SCRIP proposed and compared two frameworks with Gamma-Poisson and Beta-Gamma-Poisson models for simulating scRNA-seq data. 
 License: GPL-3 + file LICENSE
-LazyData: true
+LazyData: TRUE
 Depends: 
     R (>= 4.0)
 Imports:
