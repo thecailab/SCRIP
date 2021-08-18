@@ -1,5 +1,6 @@
-#' @export
 #' #SCRIP group simulation for differential expression analysis
+#'
+#' @export
 simu_DE <- function(expre_data, params, ngenes=NULL, nDE, ncells=NULL, FC, Dropout_rate=NULL, libsize=NULL, pre.bcv.df=NULL, bcv.shrink=1, seed=2021){
 
   if (is.null(ngenes)==F){
