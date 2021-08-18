@@ -1,5 +1,6 @@
-#' @export
 #' #SCRIP group simulation function for clustering analysis
+#'
+#' @export
 simu.VEGs <- function(counts.matrix, params=params, base_allcellmeans, mode="GP-trendedBCV", nCells, nfeatures=1000){
   message("Starting simulating SCRIP")
   rownames(counts.matrix) <- paste0("Gene",1:nrow(counts.matrix))
