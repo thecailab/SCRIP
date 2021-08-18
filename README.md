@@ -7,6 +7,8 @@ Fei Qin, Xizhi Luo, Feifei Xiao, Guoshuai Cai
 ## Description
 SCRIP provides a flexible Gamma-Poisson mixture and a Beta-Poisson mixture framework to simulate scRNA-seq data. SCRIP package was built based on the framework of splatter. Both Gamma-Poisson and Beta-Poisson distribution model the over dispersion of scRNA-seq data. Specifically, Beta-Poisson model was used to model bursting effect. The dispersion was accurately simulated by fitting the mean-BCV dependency using generalized additive model (GAM). Other key characteristics of scRNA-seq data including library size, zero inflation and outliers were also modeled by SCRIP. With its flexible modeling, SCIRP enables various application for different experimental designs and goals including DE analysis, clustering analysis, trajectory-based analysis and bursting analysis.
 
+Detailed documentation of usage, examples and intepretation can be found in https://github.com/thecailab/SCRIP/blob/main/vignettes/SCRIP-vignettes.pdf  
+
 ## Installation
 ```r
 install.packages("devtools")
