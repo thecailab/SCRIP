@@ -6,9 +6,6 @@
 #' @param names vector of names of the parameters to get.
 #'
 #' @return List with the values of the selected parameters.
-#' @examples
-#' params <- newSimpleParams()
-#' getParams(params, c("nGenes", "nCells", "mean.rate"))
 #' @export
 getParams <- function(params, names) {
 
