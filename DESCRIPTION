@@ -24,5 +24,6 @@ Imports:
     SCALE
 URL: https://https://github.com/thecailab/SCRIP
 RoxygenNote: 7.1.1
+VignetteBuilder: knitr
 Encoding: UTF-8
 Language: en-GB
