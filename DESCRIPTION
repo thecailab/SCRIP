@@ -9,7 +9,8 @@ Description: SCRIP provides a comprehensive scheme that is capable of simulating
 License: GPL-3 + file LICENSE
 LazyData: TRUE
 Depends: 
-    R (>= 4.0)
+    R (>= 4.0),
+    knitr
 Imports:
     splatter,
     S4Vectors,
