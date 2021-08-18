@@ -26,9 +26,9 @@
 #'
 #'
 #'
-#'
+#'#SCRIP simulation function
+#' 
 #' @export
-#' #SCRIP simulation function
 SCRIPsimu=function(data,
                    params,
                    method="single",
