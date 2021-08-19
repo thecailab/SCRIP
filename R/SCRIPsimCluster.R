@@ -85,7 +85,7 @@ simu.VEGs <- function(counts.matrix, params=params, base_allcellmeans, mode="GP-
 #'@param nfeatures parameter required for FinalVariable function in Seurat package
 #'@param seed seed used for simulation
 #'
-#'#SCRIP group simulation function for clustering analysis
+#'#SCRIP group simulation function for clustering analysis with multiple cell types
 #'
 #'@export
 simu_cluster <- function(expre_data, pheno_data, CTlist, mode, nfeatures, seed=2021){

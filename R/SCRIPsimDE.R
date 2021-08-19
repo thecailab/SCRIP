@@ -15,9 +15,9 @@
 #'@param seed seed for simulation
 #'
 #'
+#'#SCRIP group simulation for differential expression analysis
 #'
-#' @export
-#' #SCRIP group simulation for differential expression analysis
+#'@export
 simu_DE <- function(expre_data, params, nGenes=NULL, nDE, ncells=NULL, FC, Dropout_rate=NULL,
                     libsize=NULL, pre.bcv.df=NULL, bcv.shrink=1, seed=2021){
 
