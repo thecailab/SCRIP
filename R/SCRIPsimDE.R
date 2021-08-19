@@ -1,9 +1,27 @@
-#' #SCRIP group simulation for differential expression analysis
+#' SCRIP simulation for differential expression
+#'
+#' Simulate count data for differential expression analysis using SCRIP
+#'
+#'@param expre_data data matrix required for simulation
+#'@param params SplatParams object containing parameters for the simulation
+#'@param nGenes number of genes simulated
+#'@param nDE number of differentially expressed genes simulated
+#'@param ncells number of cells simulated
+#'@param FC fold change rate simulated between two groups
+#'@param Dropout_rate factor to control the dropout rate directly
+#'@param libsize library size used for simulation
+#'@param pre.bcv.df BCV.df enables us to change the variation of BCV values
+#'@param bcv.shrink factor to control the BCV levels
+#'@param seed seed for simulation
+#'
+#'
 #'
 #' @export
-simu_DE <- function(expre_data, params, ngenes=NULL, nDE, ncells=NULL, FC, Dropout_rate=NULL, libsize=NULL, pre.bcv.df=NULL, bcv.shrink=1, seed=2021){
+#' #SCRIP group simulation for differential expression analysis
+simu_DE <- function(expre_data, params, nGenes=NULL, nDE, ncells=NULL, FC, Dropout_rate=NULL,
+                    libsize=NULL, pre.bcv.df=NULL, bcv.shrink=1, seed=2021){
 
-  if (is.null(ngenes)==F){
+  if (is.null(nGenes)==F){
     params1=setParams(params,update=list("nGenes"=nGenes))
 
   }
