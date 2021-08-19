@@ -10,24 +10,21 @@
 #'@param libsize library size can be provided directly
 #'@param bcv.shrink factor to control the BCV levels
 #'@param Dropout_rate factor to control the dropout rate directly
-#'@param mode "GP-commonBCV", "BP-commonBCV", "BP-trendedBCV", "BP-burstBCV" and "BP"
+#'@param mode "GP-commonBCV", "BP-commonBCV", "BP", "BGP-commonBCV" and "BGP-trendedBCV"
 #'@param de.prob the proportion of DE genes
 #'@param de.downProb the proportion of down-regulated DE genes
 #'@param de.facLoc DE location factor
 #'@param de.facScale DE scale factor
-#'@param kinetics parameters of Kon Koff and S
 #'@param path.skew Controls how likely cells are from the start or end point of the path
 #'@param batch.facLoc DE location factor in batch
 #'@param batch.facScale DE scale factor in batch
 #'@param path.nSteps number of steps between the start point and end point for each path
-
 #'
 #'
 #'
 #'
+#' #SCRIP simulation function
 #'
-#'#SCRIP simulation function
-#' 
 #' @export
 SCRIPsimu=function(data,
                    params,
@@ -45,7 +42,6 @@ SCRIPsimu=function(data,
                    path.skew=NULL,
                    batch.facLoc=NULL,
                    batch.facScale=NULL,
-                   kinetics=NULL,
                    path.nSteps=NULL, ...){
 
 
@@ -69,7 +65,7 @@ SCRIPsimu=function(data,
     method <- "single"
   }
 
-  if (!(mode %in% c("GP-commonBCV","GP-trendedBCV","BP-commonBCV","BP-trendedBCV","BP","BGP-commonBCV","BGP-trendedBCV"))){
+  if (!(mode %in% c("GP-commonBCV","GP-trendedBCV","BP","BGP-commonBCV","BGP-trendedBCV"))){
     stop("simulating mode was not typed correctly")
   }
 
@@ -94,7 +90,6 @@ SCRIPsimu=function(data,
   S4Vectors::metadata(sim)$method <-  method
   S4Vectors::metadata(sim)$mode <-  mode
   S4Vectors::metadata(sim)$base_allcellmeans_SC <- base_allcellmeans_SC
-  S4Vectors::metadata(sim)$kinetics <- kinetics
 
   if (is.null(de.prob)==T){
     S4Vectors::metadata(sim)$de.prob <- rep(splatter::getParam(params, "de.prob"), nGroups)
@@ -167,20 +162,20 @@ SCRIPsimu=function(data,
   sim <- SCRIPsimGeneMeans(data, sim, params)
 
   if (nBatches > 1) {
-    sim <- splatSimBatchEffects(sim, params)
+    sim <- SCRIPSimBatchEffects(sim, params)
   }
-  sim <- splatSimBatchCellMeans(sim, params)
+  sim <- SCRIPSimBatchCellMeans(sim, params)
   if (method == "single") {
-    sim <- splatSimSingleCellMeans(sim, params)
+    sim <- SCRIPSimSingleCellMeans(sim, params)
   } else if (method == "groups") {
-    sim <- splatSimGroupDE(sim, params)
-    sim <- splatSimGroupCellMeans(sim, params)
+    sim <- SCRIPSimGroupDE(sim, params)
+    sim <- SCRIPSimGroupCellMeans(sim, params)
   } else {
     sim <- SCRIPsimPathDE(sim, params)
-    sim <- splatSimPathCellMeans(sim, params)
+    sim <- SCRIPSimPathCellMeans(sim, params)
   }
   sim <- SCRIPsimBCVMeans(data, sim, params)
-  sim <- splatSimTrueCounts(sim,params)
+  sim <- SCRIPSimTrueCounts(sim,params)
   sim <- SCRIPsimDropout(sim, params)
 
 
@@ -202,7 +197,7 @@ SCRIPsimu=function(data,
 #'
 #' @return SingleCellExperiment with simulated library sizes.
 #'
-#' @importFrom SummarizedExperiment colData colData<-
+#' @importFrom SummarizedExperiment colData colData
 #' @importFrom stats rlnorm rnorm
 SCRIPsimLibSizes <- function(sim, params, libsize) {
 
@@ -237,6 +232,7 @@ SCRIPsimLibSizes <- function(sim, params, libsize) {
 #' expression factors. Genes with an outlier factor not equal to 1 are replaced
 #' with the median mean expression multiplied by the outlier factor.
 #'
+#' @param data raw dataset.
 #' @param sim SingleCellExperiment to add gene means to.
 #' @param params SplatParams object with simulation parameters.
 #'
@@ -267,11 +263,11 @@ SCRIPsimGeneMeans <- function(data, sim, params) {
       norm.counts <- norm.counts[rowSums(norm.counts > 0) > 1, ]
 
       means <- rowMeans(norm.counts)
-      means <- means/quantile(means,0.99)
+      means <- means/stats::quantile(means,0.99)
       means[means>1] <- 1
       means.fit <- fitdistrplus::fitdist(means, "beta", method = "mme")
 
-      p <- rbeta(nGenes, unname(means.fit$estimate["shape1"]),  unname(means.fit$estimate["shape2"]))
+      p <- stats::rbeta(nGenes, unname(means.fit$estimate["shape1"]),  unname(means.fit$estimate["shape2"]))
       s <- base.means.gene
       base.means.gene <- p*s
     }
@@ -308,7 +304,7 @@ SCRIPsimGeneMeans <- function(data, sim, params) {
 #' @return SingleCellExperiment with simulated batch effects.
 #'
 #' @importFrom SummarizedExperiment rowData rowData<-
-splatSimBatchEffects <- function(sim, params) {
+SCRIPsimBatchEffects <- function(sim, params) {
 
   nGenes <- splatter::getParam(params, "nGenes")
   nBatches <- splatter::getParam(params, "nBatches")
@@ -339,8 +335,8 @@ splatSimBatchEffects <- function(sim, params) {
 #'
 #' @return SingleCellExperiment with simulated batch means.
 #'
-#' @importFrom SummarizedExperiment rowData rowData<- colData
-splatSimBatchCellMeans <- function(sim, params) {
+#' @importFrom SummarizedExperiment rowData rowData colData
+SCRIPsimBatchCellMeans <- function(sim, params) {
 
   nBatches <- splatter::getParam(params, "nBatches")
   cell.names <- SummarizedExperiment::colData(sim)$Cell
@@ -389,7 +385,7 @@ splatSimBatchCellMeans <- function(sim, params) {
 #' @return SingleCellExperiment with added cell means.
 #'
 #' @importFrom SummarizedExperiment rowData colData assays
-splatSimSingleCellMeans <- function(sim, params) {
+SCRIPsimSingleCellMeans <- function(sim, params) {
 
   nCells <- splatter::getParam(params, "nCells")
   cell.names <- SummarizedExperiment::colData(sim)$Cell
@@ -413,7 +409,7 @@ splatSimSingleCellMeans <- function(sim, params) {
 
 
 #' @importFrom SummarizedExperiment rowData colData assays assays<-
-splatSimGroupCellMeans <- function(sim, params) {
+SCRIPsimGroupCellMeans <- function(sim, params) {
 
   nGroups <- splatter::getParam(params, "nGroups")
   cell.names <- SummarizedExperiment::colData(sim)$Cell
@@ -452,12 +448,12 @@ splatSimGroupCellMeans <- function(sim, params) {
 #'
 #' @return SingleCellExperiment with simulated differential expression.
 #'
-#' @name splatSimDE
+#' @name SCRIPsimDE
 NULL
 
-#' @rdname splatSimDE
+#' @rdname SCRIPsimDE
 #' @importFrom SummarizedExperiment rowData
-splatSimGroupDE <- function(sim, params) {
+SCRIPsimGroupDE <- function(sim, params) {
 
   nGenes <- splatter::getParam(params, "nGenes")
   nGroups <- splatter::getParam(params, "nGroups")
@@ -502,13 +498,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
   mode  <- S4Vectors::metadata(sim)$mode
   bcv.shrink <- S4Vectors::metadata(sim)$bcv.shrink
   pre.bcv.df <- S4Vectors::metadata(sim)$pre.bcv.df
-  kinetics <- S4Vectors::metadata(sim)$kinetics
 
-  if (is.null(kinetics)==FALSE){
-    kon <- kinetics$kon
-    koff <- kinetics$koff
-    s <- kinetics$s
-  }
   nGenes <- splatter::getParam(params, "nGenes")
 
   cell.names <- SummarizedExperiment::colData(sim)$Cell
@@ -565,7 +555,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     for (c in 1:ncol(x_cpm)) {
       newData <- as.data.frame(x_cpm[,c])
       colnames(newData) <- "predictor"
-      bcv[,c] <- predict(formula,newData)
+      bcv[,c] <- car::predict(formula,newData)
     }
 
 
@@ -583,52 +573,8 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
   }
 
-  if (mode=="BP-commonBCV"){
-
-    if (is.finite(bcv.df)) {
-      bcv <- (bcv.common + (1 / sqrt(x))) * sqrt(bcv.df / rchisq(nGenes, df = bcv.df)) * bcv.shrink
-    } else {
-      warning("'bcv.df' is infinite. This parameter will be ignored.")
-      bcv <- (bcv.common + (1 / sqrt(x))) * bcv.shrink
-    }
-
-    # adding bursting effect
-    koni = matrix(TruncatedDistributions::rtgamma(nGenes*nCells,0.2,scale=0.2,a=0.001,b=0.2),nrow=nGenes,ncol=nCells)
-    koffi = (koni^2+koni)*bcv^2/(1-koni*bcv^2)
-    koffi[which(koffi <= 0)] <- max(koffi)
-
-    means.cell=x*(koni+koffi)/koni*matrix(rbeta(nGenes*nCells,koni,koffi),nrow=nGenes,ncol=nCells)
-  }
-
-
-  if (mode=="BP-trendedBCV") {
-
-    bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
-
-    for (c in 1:ncol(x_cpm)) {
-      newData <- as.data.frame(x_cpm[,c])
-      colnames(newData) <- "predictor"
-      bcv[,c] <- predict(formula,newData)
-    }
-
-    if (is.finite(bcv.df)) {
-        bcv <- bcv*sqrt(bcv.df / rchisq(nGenes, df = bcv.df))*bcv.shrink
-    } else {
-        warning("'bcv.df' is infinite. This parameter will be ignored.")
-        bcv <- bcv*1*bcv.shrink
-    }
-
-    # adding bursting effect
-    koni = TruncatedDistributions::rtgamma(nGenes,0.2,scale=0.2,a=0.001,b=0.2)
-    koffi = (koni^2+koni)*bcv^2/(1-koni*bcv^2)
-    koffi[which(koffi <= 0)] <- max(koffi)
-
-    means.cell=x*(koni+koffi)/koni*matrix(rbeta(nGenes*nCells,koni,koffi),nrow=nGenes,ncol=nCells)
-
-  }
-
   if (mode=="BGP-commonBCV") {
-   
+
     lambda <- x
     if (is.finite(bcv.df)) {
       bcv <- (bcv.common + (1 / sqrt(x))) * sqrt(bcv.df / rchisq(nGenes, df = bcv.df)) * bcv.shrink
@@ -646,13 +592,13 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
 
   if (mode=="BGP-trendedBCV") {
-    
+
     lambda <- x
     bcv=matrix(rep(1,ncol(x_cpm)*nrow(x_cpm)),ncol=ncol(x_cpm))
     for (c in 1:ncol(x_cpm)) {
       newData <- as.data.frame(x_cpm[,c])
       colnames(newData) <- "predictor"
-      bcv[,c] <- predict(formula,newData)
+      bcv[,c] <- car::predict(formula,newData)
     }
 
     if (is.finite(bcv.df)) {
@@ -671,6 +617,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 
 
   if (mode=="BP") {
+
     means.cell = lambda = x
   }
 
@@ -698,7 +645,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 #'
 #' @importFrom SummarizedExperiment rowData colData assays assays<-
 #' @importFrom stats rpois
-splatSimTrueCounts <- function(sim, params) {
+SCRIPsimTrueCounts <- function(sim, params) {
 
   cell.names <- SummarizedExperiment::colData(sim)$Cell
   gene.names <- SummarizedExperiment::rowData(sim)$Gene
@@ -826,7 +773,7 @@ SCRIPsimDropout <- function(sim, params) {
       # Generate probabilities based on expression
       drop.prob <- sapply(seq_len(nCells), function(idx) {
         eta <- log(cell.means[, idx])
-        return(logistic(eta, x0 = dropout.mid[idx], k = dropout.shape[idx]))
+        return(stats::logistic(eta, x0 = dropout.mid[idx], k = dropout.shape[idx]))
       })
 
       # Decide which counts to keep
@@ -891,7 +838,7 @@ SCRIPsimPathDE <- function(sim, params) {
 #' @rdname splatSimCellMeans
 #' @importFrom SummarizedExperiment rowData colData colData<- assays assays<-
 #' @importFrom stats rbinom
-splatSimPathCellMeans <- function(sim, params) {
+SCRIPsimPathCellMeans <- function(sim, params) {
 
   nGenes <- splatter::getParam(params, "nGenes")
   nCells <- splatter::getParam(params, "nCells")

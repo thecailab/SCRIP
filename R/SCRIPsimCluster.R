@@ -1,6 +1,18 @@
-#' #SCRIP group simulation function for clustering analysis
+#' SCRIP simulation for clustering analysis
+#'
+#' Simulate count data for clustering analysis by preserving variably expressed genes
+#'
+#'@param counts.matrix data matrix required for simulation
+#'@param params SplatParams object containing parameters for the simulation
+#'@param base_allcellmeans base cell means specified directly for simulating counts
+#'@param mode "GP-commonBCV", "BP-commonBCV", "BP", "BGP-commonBCV" and "BGP-trendedBCV"
+#'@param ncells number of cells simulated
+#'@param nfeatures parameter required for FinalVariable function in Seurat package
+#'
+#'
 #'
 #' @export
+#' #SCRIP group simulation function for clustering analysis
 simu.VEGs <- function(counts.matrix, params=params, base_allcellmeans, mode="GP-trendedBCV", nCells, nfeatures=1000){
   message("Starting simulating SCRIP")
   rownames(counts.matrix) <- paste0("Gene",1:nrow(counts.matrix))
@@ -13,7 +25,7 @@ simu.VEGs <- function(counts.matrix, params=params, base_allcellmeans, mode="GP-
   stim <- Seurat::FindVariableFeatures(object = seurat_stim,
                                selection.method = "vst",
                                nfeatures = nfeatures)
-  top <- head(VariableFeatures(stim),nfeatures)
+  top <- head(Seurat::VariableFeatures(stim),nfeatures)
   EGcounts <- counts.matrix[top,]
 
   com_base_cellmeans <- base_allcellmeans
@@ -53,7 +65,7 @@ simu.VEGs <- function(counts.matrix, params=params, base_allcellmeans, mode="GP-
     SCRIP.common.noburst <-  SCRIPsimu(data=counts.matrix, params=params, batchCells=nCells,
                                      base_allcellmeans_SC=com_base_cellmeans,
                                      mode="GP-commonBCV")
-    res <- counts(SCRIP.common.noburst)
+    res <- SingleCellExperiment::counts(SCRIP.common.noburst)
   }
 
   return(res)
@@ -61,13 +73,28 @@ simu.VEGs <- function(counts.matrix, params=params, base_allcellmeans, mode="GP-
 
 
 
-simu_cluster <- function(expre_data, pheno_data, CT, mode, nfeatures, seed=2021){
+
+#' SCRIP simulation for clustering analysis with multiple cell types
+#'
+#' Simulate count data for clustering analysis by preserving variably expressed genes with multiple cell types
+#'
+#'@param expre_data data matrix required for simulation
+#'@param pheno_data phenotype data information
+#'@param CTlist cell types used for simulation
+#'@param mode "GP-commonBCV", "BP-commonBCV", "BP", "BGP-commonBCV" and "BGP-trendedBCV"
+#'@param nfeatures parameter required for FinalVariable function in Seurat package
+#'@param seed seed used for simulation
+#'
+#'#SCRIP group simulation function for clustering analysis
+#'
+#'@export
+simu_cluster <- function(expre_data, pheno_data, CTlist, mode, nfeatures, seed=2021){
   set.seed(seed)
   params <- splatter::splatEstimate(expre_data)
   parnGene <- params@nGenes
   parshape <- params@mean.shape
   parrate <- params@mean.rate
-  base_allcellmeans=rgamma(parnGene, shape=parshape, rate=parrate)
+  base_allcellmeans=stats::rgamma(parnGene, shape=parshape, rate=parrate)
 
   final <- CT.infor <- NULL
   for (CT in CTlist){
