@@ -19,7 +19,7 @@
 #'@param batch.facLoc DE location factor in batch
 #'@param batch.facScale DE scale factor in batch
 #'@param path.nSteps number of steps between the start point and end point for each path
-#'
+#'@param ... Other parameters
 #'
 #'
 #'
@@ -162,20 +162,20 @@ SCRIPsimu=function(data,
   sim <- SCRIPsimGeneMeans(data, sim, params)
 
   if (nBatches > 1) {
-    sim <- SCRIPSimBatchEffects(sim, params)
+    sim <- SCRIPsimBatchEffects(sim, params)
   }
-  sim <- SCRIPSimBatchCellMeans(sim, params)
+  sim <- SCRIPsimBatchCellMeans(sim, params)
   if (method == "single") {
-    sim <- SCRIPSimSingleCellMeans(sim, params)
+    sim <- SCRIPsimSingleCellMeans(sim, params)
   } else if (method == "groups") {
-    sim <- SCRIPSimGroupDE(sim, params)
-    sim <- SCRIPSimGroupCellMeans(sim, params)
+    sim <- SCRIPsimGroupDE(sim, params)
+    sim <- SCRIPsimGroupCellMeans(sim, params)
   } else {
     sim <- SCRIPsimPathDE(sim, params)
-    sim <- SCRIPSimPathCellMeans(sim, params)
+    sim <- SCRIPsimPathCellMeans(sim, params)
   }
   sim <- SCRIPsimBCVMeans(data, sim, params)
-  sim <- SCRIPSimTrueCounts(sim,params)
+  sim <- SCRIPsimTrueCounts(sim,params)
   sim <- SCRIPsimDropout(sim, params)
 
 
@@ -238,7 +238,7 @@ SCRIPsimLibSizes <- function(sim, params, libsize) {
 #'
 #' @return SingleCellExperiment with simulated gene means.
 #'
-#' @importFrom SummarizedExperiment rowData rowData<-
+#' @importFrom SummarizedExperiment rowData rowData
 #' @importFrom stats rgamma median
 SCRIPsimGeneMeans <- function(data, sim, params) {
 
@@ -452,7 +452,7 @@ SCRIPsimGroupCellMeans <- function(sim, params) {
 NULL
 
 #' @rdname SCRIPsimDE
-#' @importFrom SummarizedExperiment rowData
+#' @importFrom SummarizedExperiment rowData<-
 SCRIPsimGroupDE <- function(sim, params) {
 
   nGenes <- splatter::getParam(params, "nGenes")
@@ -555,7 +555,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     for (c in 1:ncol(x_cpm)) {
       newData <- as.data.frame(x_cpm[,c])
       colnames(newData) <- "predictor"
-      bcv[,c] <- car::predict(formula,newData)
+      bcv[,c] <- stats::predict(formula,newData)
     }
 
 
@@ -598,7 +598,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
     for (c in 1:ncol(x_cpm)) {
       newData <- as.data.frame(x_cpm[,c])
       colnames(newData) <- "predictor"
-      bcv[,c] <- car::predict(formula,newData)
+      bcv[,c] <- stats::predict(formula,newData)
     }
 
     if (is.finite(bcv.df)) {
@@ -643,7 +643,7 @@ SCRIPsimBCVMeans <- function(data, sim, params){
 #'
 #' @return SingleCellExperiment with simulated true counts.
 #'
-#' @importFrom SummarizedExperiment rowData colData assays assays<-
+#' @importFrom SummarizedExperiment rowData colData assays assays
 #' @importFrom stats rpois
 SCRIPsimTrueCounts <- function(sim, params) {
 
@@ -684,7 +684,7 @@ SCRIPsimTrueCounts <- function(sim, params) {
 #'
 #' @return SingleCellExperiment with simulated dropout and observed counts.
 #'
-#' @importFrom SummarizedExperiment rowData colData assays assays<-
+#' @importFrom SummarizedExperiment rowData colData assays assays
 #' @importFrom stats rbinom
 SCRIPsimDropout <- function(sim, params) {
   dropout.type <- splatter::getParam(params, "dropout.type")
@@ -773,7 +773,7 @@ SCRIPsimDropout <- function(sim, params) {
       # Generate probabilities based on expression
       drop.prob <- sapply(seq_len(nCells), function(idx) {
         eta <- log(cell.means[, idx])
-        return(stats::logistic(eta, x0 = dropout.mid[idx], k = dropout.shape[idx]))
+        return(logistic(eta, x0 = dropout.mid[idx], k = dropout.shape[idx]))
       })
 
       # Decide which counts to keep

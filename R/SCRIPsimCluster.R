@@ -6,7 +6,7 @@
 #'@param params SplatParams object containing parameters for the simulation
 #'@param base_allcellmeans base cell means specified directly for simulating counts
 #'@param mode "GP-commonBCV", "BP-commonBCV", "BP", "BGP-commonBCV" and "BGP-trendedBCV"
-#'@param ncells number of cells simulated
+#'@param nCells number of cells simulated
 #'@param nfeatures parameter required for FinalVariable function in Seurat package
 #'
 #'
@@ -39,7 +39,7 @@ simu.VEGs <- function(counts.matrix, params=params, base_allcellmeans, mode="GP-
     SCRIP.Trend.burst <- SCRIPsimu(data=counts.matrix, params=params, batchCells=nCells,
                                    base_allcellmeans_SC=com_base_cellmeans,
                                    mode="BP-trendedBCV")
-    res <- counts(SCRIP.Trend.burst)
+    res <- SingleCellExperiment::counts(SCRIP.Trend.burst)
   }
 
   if (mode=="BP-commonBCV"){
@@ -47,7 +47,7 @@ simu.VEGs <- function(counts.matrix, params=params, base_allcellmeans, mode="GP-
     SCRIP.common.burst <-  SCRIPsimu(data=counts.matrix, params=params, batchCells=nCells,
                                    base_allcellmeans_SC=com_base_cellmeans,
                                    mode="BP-commonBCV")
-    res <- counts(SCRIP.common.burst)
+    res <- SingleCellExperiment::counts(SCRIP.common.burst)
   }
 
 
@@ -56,7 +56,7 @@ simu.VEGs <- function(counts.matrix, params=params, base_allcellmeans, mode="GP-
     SCRIP.Trend.noburst <- SCRIPsimu(data=counts.matrix, params=params, batchCells=nCells,
                                    base_allcellmeans_SC=com_base_cellmeans,
                                    mode="GP-trendedBCV")
-    res <- counts(SCRIP.Trend.noburst)
+    res <- SingleCellExperiment::counts(SCRIP.Trend.noburst)
   }
 
 

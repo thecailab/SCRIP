@@ -207,7 +207,7 @@ setMethod("setParams", "SplatParams", function(object, update = NULL, ...) {
 
     update <- c(update, list(...))
 
-    update <- splatter::bringItemsForward(update, c("batchCells", "group.prob"))
+    update <- bringItemsForward(update, c("batchCells", "group.prob"))
 
     object <- callNextMethod(object, update)
 
