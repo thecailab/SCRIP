@@ -21,9 +21,10 @@ install_github("thecailab/SCRIP")
 ### Examples
 
 ```r
+library(splatter)
 library(SCRIP)
 library(Biobase)
-library(splatter)
+
 
 EMTAB.eset <- EMTABesethealthy
 expre_data = exprs(EMTAB.eset)
