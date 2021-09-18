@@ -29,7 +29,7 @@ Imports:
     fitdistrplus,
     checkmate (>= 2.0.0),
     SCALE
-URL: https://https://github.com/thecailab/SCRIP
+URL: https://github.com/thecailab/SCRIP
 RoxygenNote: 7.1.1
 VignetteBuilder: knitr
 Encoding: UTF-8
