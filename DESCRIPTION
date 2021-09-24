@@ -9,8 +9,7 @@ Description: We provide a comprehensive scheme that is capable of simulating scR
 License: GPL-3 + file LICENSE
 LazyData: TRUE
 Depends: 
-    R (>= 4.0),
-    SCALE
+    R (>= 4.0)
 Imports:
     splatter,
     S4Vectors,
