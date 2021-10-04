@@ -46,7 +46,7 @@ SCRIPsimu=function(data,
 
 
   params <-  splatter::setParams(params, ...)
-  # params <- expandParams(params)
+  # params <- splatter::expandParams(params)
   # validObject(params)
 
   seed <- splatter::getParam(params, "seed")
