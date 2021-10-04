@@ -1,14 +1,3 @@
-#' New Params
-#'
-#' Create a new Params object. Functions exist for each of the different
-#' Params subtypes.
-#'
-#' @param ... additional parameters passed to \code{\link{setParams}}.
-#'
-#' @return New Params object.
-#' @name newParams
-NULL
-
 #' Get a parameter
 #'
 #' Accessor function for getting parameter values.
