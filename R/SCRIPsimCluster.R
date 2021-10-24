@@ -18,8 +18,8 @@ simu.VEGs <- function(counts.matrix, params=params, base_allcellmeans, mode="GP-
   rownames(counts.matrix) <- paste0("Gene",1:nrow(counts.matrix))
   colnames(counts.matrix) <- paste0("Cell",1:ncol(counts.matrix))
 
-  pbmc <- Seurat::CreateSeuratObject(counts = counts.matrix, project = "pbmc3k", min.cells = 3, min.features = 200)
-  seurat_stim <- Seurat::NormalizeData(pbmc,
+  VEGs_data <- Seurat::CreateSeuratObject(counts = counts.matrix, project = "SCRIP_VEGs", min.cells = 3, min.features = 200)
+  seurat_stim <- Seurat::NormalizeData(VEGs_data,
                                normalization.method = "LogNormalize",
                                scale.factor = 10000)
   stim <- Seurat::FindVariableFeatures(object = seurat_stim,
