@@ -15,7 +15,7 @@ Imports:
     S4Vectors,
     methods,
     SummarizedExperiment,
-	stats,
+    stats,
     SingleCellExperiment,
     mgcv,
     edgeR,
