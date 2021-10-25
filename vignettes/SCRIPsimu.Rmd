@@ -2,7 +2,7 @@
 title: "SCRIP simulation for scRNA-seq data"
 author: "Fei Qin"
 packages: "SCRIP"
-date: "Last updated: 08/17/2021"
+date: "Last updated: 10/25/2021"
 output: pdf_document
 ---
 
@@ -197,21 +197,21 @@ Group.sim <- function(data){
   library(dplyr)
   library(Seurat)
   library(cowplot)
-  pbmc <- CreateSeuratObject(counts = data, project = "MuSiC", min.cells = 3, 
+  VEGs_data <- CreateSeuratObject(counts = data, project = "SCRIP_VEGs", min.cells = 3, 
                              min.features = 200)
-  pbmc <- NormalizeData(pbmc, normalization.method = "LogNormalize", scale.factor = 10000)
-  pbmc <- FindVariableFeatures(pbmc, selection.method = "vst", nfeatures = 100)
-  all.genes <- rownames(pbmc)
-  pbmc <- ScaleData(pbmc, features = all.genes)
-  pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
-  pbmc <- RunUMAP(pbmc, dims = 1:10)
-  pbmc <- RunTSNE(pbmc)
-  return(pbmc)
+  VEGs_data <- NormalizeData(VEGs_data, normalization.method = "LogNormalize", scale.factor = 10000)
+  VEGs_data <- FindVariableFeatures(VEGs_data, selection.method = "vst", nfeatures = 100)
+  all.genes <- rownames(VEGs_data)
+  VEGs_data <- ScaleData(VEGs_data, features = all.genes)
+  VEGs_data <- RunPCA(VEGs_data, features = VariableFeatures(object = VEGs_data))
+  VEGs_data <- RunUMAP(VEGs_data, dims = 1:10)
+  VEGs_data <- RunTSNE(VEGs_data)
+  return(VEGs_data)
 }
 
-pbmc <- Group.sim(data=final)
-pbmc@meta.data$Celltype <- CT.infor
-umap <- DimPlot(pbmc, reduction = "umap",group.by = "Celltype",pt.size=1)+
+VEGs_data <- Group.sim(data=final)
+VEGs_data@meta.data$Celltype <- CT.infor
+umap <- DimPlot(VEGs_data, reduction = "umap",group.by = "Celltype",pt.size=1)+
   labs(title="GP-trendedBCV clustering simulation")+
   theme(plot.title = element_text(face="bold",size=12, hjust=0.5),
         legend.text=element_text(size=12),
@@ -543,245 +543,4 @@ library(scater)
 sim2 <- logNormCounts(sim.SCRIP2)
 sim2 <- runPCA(sim2)
 plotPCA(sim2, colour_by = "Group") + ggtitle("Big DE factors")
-```
-
-\newpage
-
-# 7 Trajectory DE simulation
-
-To mitigate the side effect of non-significant genes during analysis, it is essential to find genes that are differentially expressed within lineage or between lineages, referred as trajectory DE analysis. SCRIP enables evaluation of trajectory DE analysis methods with simulated DEGs for within lineage or between lineages. Between-lineage and within-lineage DEGs were simulated separately, with multiplicative differential expression factors generated from a log-normal distribution described above.
-
-## 7.1 Within-lineage trajectory DE simulation
-
-For within-lineage simulation, 20% genes were also randomly selected as within-lineage differentially expressed with other within-lineage DE parameters de.downProb, de.facLoc and de.facScale.
-
-```{r, message=FALSE, warning = FALSE}
-library(SCRIP)
-library(splatter)
-counts <- as.matrix(Tung)
-
-counts <- counts[1:10000,1:200]
-params <- splatEstimate((counts))
-
-sim.SCRIP.within <- SCRIPsimu(data=counts, params=params, method="paths", 
-                              de.prob = 0.2, de.downProb=0.5, 
-                              de.facLoc=1.2, de.facScale=0.1)
-``` 
-
-
-```{r, message=FALSE, warning = FALSE}
-sim <- sim.SCRIP.within
-All.genes <- rownames(counts(sim))
-Truepaths <- rowData(sim)
-DE.within.path1 <- Truepaths$DEFacPath1
-True.within <- rep("common",10000)
-True.within[which(DE.within.path1 != 1)] <- "DE"
-table(True.within)
-```
-
-
-### 7.1.1 Monocle3 
-
-Monocle3 test whether any of the genes change over time in their expression by fitting a generalized linear model.
-
-```{r, message=FALSE, warning = FALSE, eval=FALSE}
-library(monocle3)
-expression_matrix <- counts(sim.SCRIP.within)
-cell_metadata <- data.frame(libsize = apply(expression_matrix,2,sum))
-rownames(cell_metadata) <- colnames(expression_matrix)
-gene_annotation <- data.frame(gene_short_name=rownames(expression_matrix))
-rownames(gene_annotation) <- rownames(expression_matrix)
-
-cds.within <- new_cell_data_set(expression_matrix,
-                                cell_metadata = cell_metadata,
-                                gene_metadata = gene_annotation)
-
-cds.within <- preprocess_cds(cds.within, num_dim = 100, method = "PCA")
-
-cds.within <- reduce_dimension(cds.within,preprocess_method = "PCA",
-                        reduction_method = "UMAP")
-cds.within <- cluster_cells(cds.within,reduction_method="UMAP")
-cds.within <- learn_graph(cds.within)
-
-# We find all the cells that are close to the starting point
-closest_vertex <- cds.within@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
-closest_vertex <- as.matrix(closest_vertex[colnames(cds.within), ])
-closest_vertex <- as.numeric(names(which.max(table(closest_vertex))))
-mst <- principal_graph(cds.within)$UMAP
-root_pr_nodes <- igraph::V(mst)$name[closest_vertex]
-
-# We compute the trajectory
-cds.within <- order_cells(cds.within, root_pr_nodes = root_pr_nodes)
-
-# plot_cells(cds.within)
-
-gene_fits <- fit_models(cds.within, model_formula_str = "~pseudotime")
-fit_coefs <- coefficient_table(gene_fits)
-
-fit_coefs <- fit_coefs[which(fit_coefs$term != "(Intercept)"),]
-```
-
-
-### 7.1.2 tradeSeq
-
-tradeSeq implements the associationTest() fucntion to test whether the average gene expression is significantly changing along pseudotime.
-
-```{r, message=FALSE, warning = FALSE, eval=FALSE}
-library(magrittr)
-# Get the closest vertice for every cell
-y_to_cells <-  principal_graph_aux(cds.within)$UMAP$pr_graph_cell_proj_closest_vertex %>%
-  as.data.frame()
-y_to_cells$cells <- rownames(y_to_cells)
-y_to_cells$Y <- y_to_cells$V1
-
-# Get the root vertices
-# It is the same node as above
-root <- cds.within@principal_graph_aux$UMAP$root_pr_nodes
-
-# Get the other endpoints
-endpoints <- names(which(igraph::degree(mst) == 1))
-endpoints <- endpoints[!endpoints %in% root]
-
-# For each endpoint
-cellWeights <- lapply(endpoints, function(endpoint) {
-  # We find the path between the endpoint and the root
-  path <- igraph::shortest_paths(mst, root, endpoint)$vpath[[1]]
-  path <- as.character(path)
-  # We find the cells that map along that path
-  df <- y_to_cells[y_to_cells$Y %in% path, ]
-  df <- data.frame(weights = as.numeric(colnames(cds.within) %in% df$cells))
-  colnames(df) <- endpoint
-  return(df)
-}) %>% do.call(what = 'cbind', args = .) %>%
-  as.matrix()
-rownames(cellWeights) <- colnames(cds.within)
-pseudotime <- matrix(pseudotime(cds.within), ncol = ncol(cellWeights),
-                     nrow = ncol(cds.within), byrow = FALSE)
-
-library(tradeSeq)
-sce.within <- fitGAM(counts = expression_matrix ,
-              pseudotime = pseudotime,
-              cellWeights = cellWeights)
-```
-
-
-```{r, message=FALSE, warning = FALSE, eval=FALSE}
-library(tradeSeq)
-## Association of gene expression with pseudotime
-assoRes <- associationTest(sce.within)
-```
-
-
-## 7.2 Between-lineage trajectory DE simulation
-
-Between-lineage DE factors: Between-lineage DE factors are generated from a log-normal distribution with parameters including number of genes (nGenes), the path-specific proportion of DE genes (de.prob), the proportion of down-regulated DE genes (de.downProb), location factor (de.facLoc) and scale factor (de.facScale). \      
-
-```{r, message=FALSE, warning = FALSE}
-library(SCRIP)
-library(splatter)
-counts <- as.matrix(Tung)
-
-counts <- counts[1:10000,1:400]
-params <- splatEstimate(counts)
-
-sim.SCRIP.between <- SCRIPsimu(data=counts, params=params, method="paths",
-                               group.prob = c(0.5,0.5), 
-                               de.prob = c(0.0,0.2), de.downProb=c(0.5,0.5), 
-                               de.facLoc=c(1.2,1.2), de.facScale=c(0.1,0.1),
-                               path.from = c(0, 1),path.nSteps = c(100, 100))
-```
-
-```{r, message=FALSE, warning = FALSE}
-Truepaths <- rowData(sim.SCRIP.between)
-DE.between.path <- Truepaths$DEFacPath2
-True.between <- rep("common",10000)
-True.between[which(DE.between.path != 1)] <- "DE"
-table(True.between)
-```
-
-### 7.2.1 monocle3
-
-The graph_test() in monocle3 uses a statistic from spatial autocorrelation analysis called Moran's I to identify the DEGs.
-
-```{r, message=FALSE, warning = FALSE, eval=FALSE}
-library(monocle3)
-expression_matrix <- counts(sim.SCRIP.between)
-cell_metadata <- data.frame(libsize = apply(expression_matrix,2,sum))
-rownames(cell_metadata) <- colnames(expression_matrix)
-gene_annotation <- data.frame(gene_short_name=rownames(expression_matrix))
-rownames(gene_annotation) <- rownames(expression_matrix)
-
-cds <- new_cell_data_set(expression_matrix,
-                         cell_metadata = cell_metadata,
-                         gene_metadata = gene_annotation)
-
-cds <- preprocess_cds(cds, num_dim = 100, method = "PCA")
-
-cds <- reduce_dimension(cds,preprocess_method = "PCA",
-                        reduction_method = "UMAP")
-cds <- cluster_cells(cds,reduction_method="UMAP")
-cds <- learn_graph(cds,use_partition = FALSE)
-
-# We find all the cells that are close to the starting point
-closest_vertex <- cds@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
-closest_vertex <- as.matrix(closest_vertex[colnames(cds), ])
-closest_vertex <- as.numeric(names(which.max(table(closest_vertex))))
-mst <- principal_graph(cds)$UMAP
-root_pr_nodes <- igraph::V(mst)$name[closest_vertex]
-
-# We compute the trajectory
-cds <- order_cells(cds, root_pr_nodes = root_pr_nodes)
-plot_cells(cds, color_cells_by = "pseudotime")
-
-pr_graph_test_res <- graph_test(cds, neighbor_graph="knn", cores=8)
-```
-
-
-
-### 7.2.2 tradeSeq
-
-The function patternTest() implements a statistical model to identify DEGs which have significantly different expression patterns.
-
-```{r, message=FALSE, warning = FALSE, eval=FALSE}
-library(magrittr)
-# Get the closest vertice for every cell
-y_to_cells <-  principal_graph_aux(cds)$UMAP$pr_graph_cell_proj_closest_vertex %>%
-  as.data.frame()
-y_to_cells$cells <- rownames(y_to_cells)
-y_to_cells$Y <- y_to_cells$V1
-
-# Get the root vertices
-root <- cds@principal_graph_aux$UMAP$root_pr_nodes
-
-# Get the other endpoints
-endpoints <- names(which(igraph::degree(mst) == 1))
-endpoints <- endpoints[!endpoints %in% root]
-
-# For each endpoint
-cellWeights <- lapply(endpoints, function(endpoint) {
-  # We find the path between the endpoint and the root
-  path <- igraph::shortest_paths(mst, root, endpoint)$vpath[[1]]
-  path <- as.character(path)
-  # We find the cells that map along that path
-  df <- y_to_cells[y_to_cells$Y %in% path, ]
-  df <- data.frame(weights = as.numeric(colnames(cds) %in% df$cells))
-  colnames(df) <- endpoint
-  return(df)
-}) %>% do.call(what = 'cbind', args = .) %>%
-  as.matrix()
-
-rownames(cellWeights) <- colnames(cds)
-pseudotime <- matrix(pseudotime(cds), ncol = ncol(cellWeights),
-                     nrow = ncol(cds), byrow = FALSE)
-
-library(tradeSeq)
-sce <- fitGAM(counts = expression_matrix,
-              pseudotime = pseudotime,
-              cellWeights = cellWeights)
-```
-
-
-```{r, message=FALSE, warning = FALSE, eval=FALSE}
-library(tradeSeq)
-patternRes <- patternTest(sce)
 ```
