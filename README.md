@@ -71,3 +71,6 @@ reducedDimNames(0):
 altExpNames(0):
 
 ```
+
+## Citation
+Qin, Fei, Xizhi Luo, Feifei Xiao, and Guoshuai Cai. "SCRIP: an accurate simulator for single-cell RNA sequencing data." Bioinformatics 38, no. 5 (2022): 1304-1311.
